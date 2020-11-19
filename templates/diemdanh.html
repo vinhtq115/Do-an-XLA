@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FacePlus++</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/RecordRTC/5.6.1/RecordRTC.js"></script>
+</head>
+<body>
+    <h1>FacePlus++</h1>
+    <label for="mssv">Student ID:</label><input type="text" id="mssv" name="studentid" maxlength="8"><br/>
+    <video autoplay playsinline id="video"></video><br/>
+    <button id="btn-start">Start recording then upload</button>
+    <script>
+        const video = document.getElementById('video');
+        navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+        }).then(function (camera) {
+            // Preview camera
+            video.muted = true;
+            video.srcObject = camera;
+
+            // Recording configuration/hints/parameters
+            var recordingHints = {
+                type: 'video',
+                mimeType: 'video/webm;codecs=h264'
+            };
+
+            // Initiate the recorder
+            var recorder = RecordRTC(camera, recordingHints);
+
+            // Start recording when button is clicked
+            document.getElementById('btn-start').onclick = function () {
+                this.disabled = true;
+
+                // Start recording
+                recorder.startRecording();
+
+                // Auto stop recording after 5 seconds
+                setTimeout(function() {
+                    // Stop recording
+                    recorder.stopRecording(function () {
+                        // Get recorded blob
+                        var blob = recorder.getBlob();
+
+                        // Open recorded blob in a new window
+                        //window.open(URL.createObjectURL(blob));
+
+                        // Release camera
+                        video.srcObject = null;
+                        camera.getTracks().forEach(function (track) {
+                            track.stop();
+                        });
+
+                        // Upload?
+                        var formdata = new FormData();
+                        formdata.append('studentid', document.getElementById('mssv').value);
+                        formdata.append('video', blob);
+                        $.ajax({
+                            type: 'POST',
+                            url: '/register',
+                            data: formdata,
+                            processData: false,
+                            contentType: false
+                        }).done(function (data) {
+                            console.log(data);
+                        })
+                    });
+                }, 3000);
+            }
+        })
+    </script>
+</body>
+</html>
