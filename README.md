@@ -1,3 +1,4 @@
 # Do-an-XLA
 Run Homepage by run index.html<br/>
-Face Recognition in att.index
+Register face in regis.html<br/>
+Face Recognition in diemdanh.index
