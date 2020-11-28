@@ -1,0 +1,181 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>FacePlus++</title>
+    <link href="/static/css/css1.css" rel="stylesheet" />
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-sm bg-light navbar-light" style="margin-bottom:0;background-color:#7386D5">
+        <!-- Brand -->
+        <a class="navbar-brand" href="index.html">
+            <img src="/static/ref/logo1.jpg" style="width:40px;height:40px;border:solid;border-radius:10%" />
+            <strong> FacePlus++ </strong>for Student
+        </a>
+    </nav>
+    <div class="wrapper">
+        <!-- Sidebar  -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3>Menu</h3>
+            </div>
+            <ul class="list-unstyled components">
+                <li class="active">
+                    <a href="/">
+                        <i class="fa fa-home" aria-hidden="true"></i>
+                        Home
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="/attendance">
+                        <i class="fa fa-graduation-cap" aria-hidden="true"></i>
+                        Attendance
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="/register">
+                        <i class="fa fa-file-text" aria-hidden="true"></i>
+                        Registration
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <!-- Page Content  -->
+        <div id="content">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                    <button type="button" id="sidebarCollapse" class="btn btn-info">
+                        <i class="fa fa-bars" aria-hidden="true"></i>
+                        <span>Toggle Menu</span>
+                    </button>
+                </div>
+            </nav>
+            <div id="reg">
+                <h2 style="margin-top: 40px">Attendence</h2>
+                <br />
+                <video autoplay playsinline width="640" height="480" id="video"></video>
+                <canvas id="canvas" width="640" height="480" style="display: none"></canvas><img id="img"><br/>
+                <button id="btn-start" class="btn btn-primary">Try your luck.</button><br/>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/popper.min.js"></script>
+    <script src="/static/js/jquery-3.5.1.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#sidebarCollapse').on('click', function () {
+                $('#sidebar').toggleClass('active');
+            });
+        });
+    </script>
+    <script>
+        const btn = document.getElementById("btn-start");
+        (function() {
+            var width = 640;
+            var height = 480;
+
+            // streaming indicates whether or not we're currently streaming
+            var streaming = false;
+
+            var video = null;
+            var canvas = null;
+            var startbutton = null;
+
+            function startup() {
+                video = document.getElementById('video');
+                canvas = document.getElementById('canvas');
+                startbutton = document.getElementById('btn-start');
+
+                navigator.mediaDevices.getUserMedia({video: true, audio: false})
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function(err) {
+                    console.log("An error occurred: " + err);
+                });
+
+                video.addEventListener('canplay', function(){
+                    if (!streaming) {
+                        video.setAttribute('width', width);
+                        video.setAttribute('height', height);
+                        canvas.setAttribute('width', width);
+                        canvas.setAttribute('height', height);
+                        streaming = true;
+                    }
+                }, false);
+
+                startbutton.addEventListener('click', function(ev){
+                    takepicture();
+                    $('video').hide();
+                    //$('canvas').show();
+                    ev.preventDefault();
+                }, false);
+            }
+
+            // Capture a photo by fetching the current contents of the video
+            // and drawing it into a canvas, then converting that to a PNG
+            // format data URL. By drawing it on an offscreen canvas and then
+            // drawing that to the screen, we can change its size and/or apply
+            // other changes before drawing it.
+
+            function takepicture() {
+                var context = canvas.getContext('2d');
+                if (width && height) {
+                    canvas.width = width;
+                    canvas.height = height;
+                    context.drawImage(video, 0, 0, width, height);
+
+                    var data = canvas.toDataURL('image/png');
+                    var formdata = new FormData();
+                    formdata.append('image', data);
+                    $.ajax({
+                        type: 'POST',
+                        url: '/attendance',
+                        data: formdata,
+                        processData: false,
+                        contentType: false
+                    }).done(function (data) {
+                        var resp = JSON.parse(data);
+                        if (resp.status == 0) { // Success
+                            var d = document.createElement('div');
+                            d.classList.add('alert');
+                            d.classList.add('alert-success');
+                            d.setAttribute('role', 'alert');
+                            d.innerText = resp.message;
+
+                            btn.parentNode.insertBefore(d, btn.nextSibling);
+
+                            const img = document.getElementById('img');
+                            img.src = resp.image;
+                        } else { // Error
+                            var d = document.createElement('div');
+                            d.classList.add('alert');
+                            d.classList.add('alert-danger');
+                            d.setAttribute('role', 'alert');
+                            d.innerText = resp.message;
+                            d.innerText += " Reloading in 3 seconds.";
+
+                            _button.parentNode.insertBefore(d, _button.nextSibling);
+
+                            setTimeout(function() {
+                                location.reload();
+                            }, 3000);
+                        }
+                    })
+                }
+            }
+
+            // Set up our event listener to run the startup process
+            // once loading is complete.
+            window.addEventListener('load', startup, false);
+        })();
+    </script>
+</body>
+
+</html>
