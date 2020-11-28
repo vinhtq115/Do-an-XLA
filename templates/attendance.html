@@ -161,8 +161,12 @@
                             d.innerText = resp.message;
                             d.innerText += " Reloading in 3 seconds.";
 
-                            _button.parentNode.insertBefore(d, _button.nextSibling);
+                            btn.parentNode.insertBefore(d, btn.nextSibling);
 
+                            if (resp.status == 3) {
+                                const img = document.getElementById('img');
+                                img.src = resp.image;
+                            }
                             setTimeout(function() {
                                 location.reload();
                             }, 3000);

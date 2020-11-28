@@ -24,13 +24,46 @@ def extract_videos_to_images(file: str, output: str, studentid: str, face_detect
         faces = face_detector.detectMultiScale(gray, 1.3, 5, minSize=(128, 128))
         if len(faces) > 0:
             x, y, w, h = faces[0]
-            cv2.imwrite(os.path.join(output, studentid + "_%d.jpg" % count), gray[y: y + h, x: x + w])
+            im_face = gray[y: y + h, x: x + w]
+
+            cv2.imwrite(os.path.join(output, studentid + "_%d.jpg" % count), im_face)
+
             count += 1
             if count == 30:
                 return True
         success, image = video.read()
 
     return False
+
+
+def check_potential_errors(image, recognizer, face_detector):
+    if recognizer is None:
+        return False
+
+    faces = face_detector.detectMultiScale(
+        image,
+        scaleFactor=1.2,
+        minNeighbors=5,
+        minSize=(128, 128)
+    )
+    if len(faces) == 0:
+        return None
+
+    # Since Cascade Classifier may detect multiple faces, get the biggest one
+    max_square = -1
+    for (x, y, w, h) in faces:
+        if w * h > max_square:
+            max_square = w * h
+            _x = x
+            _y = y
+            _w = w
+            _h = h
+
+    _id, _confidence = recognizer.predict(image[_y: _y + h, _x: _x + w])
+    if _confidence > 50:
+        return False
+    else:
+        return _id
 
 
 def train_image(path: str, recognizer, face_detector):
@@ -94,6 +127,27 @@ def base64_to_image(data):
     return open_cv_image
 
 
+def rotate(image, angle, center=None, scale=1.0):
+    """
+    Rotate an image around a center point
+    :param image: Image
+    :param angle: Rotation angle
+    :param center: Center point coordinate
+    :param scale: Scale
+    :return: Rotated image
+    """
+    (h, w) = image.shape[:2]
+
+    if center is None:
+        center = (w / 2, h / 2)
+
+    # Perform the rotation
+    M = cv2.getRotationMatrix2D(center, angle, scale)
+    rotated = cv2.warpAffine(image, M, (w, h))
+
+    return rotated
+
+
 def face_recognition(image, face_detector, recognizer, students: dict):
     faces = face_detector.detectMultiScale(
         image,
@@ -104,6 +158,8 @@ def face_recognition(image, face_detector, recognizer, students: dict):
 
     if len(faces) == 0:
         return None, None, None
+    else:
+        image_to_use = image.copy()
 
     # Since Cascade Classifier may detect multiple faces, get the biggest one
     max_square = -1
@@ -115,13 +171,13 @@ def face_recognition(image, face_detector, recognizer, students: dict):
             _w = w
             _h = h
 
-    out_image = image.copy()
+    out_image = image_to_use.copy()
     cv2.rectangle(out_image, (_x, _y), (x + w, y + h), (0, 0, 0), 2)
 
-    id, confidence = recognizer.predict(image[_y: _y + h, _x: _x + w])
+    id, confidence = recognizer.predict(image_to_use[_y: _y + h, _x: _x + w])
 
     # The smaller the confidence, the better the match?
-    if confidence < 100:
+    if confidence < 50:
         id = str(id)
         name = students.get(id)
         confidence = "    {0}%".format(round(100 - confidence))
@@ -130,7 +186,7 @@ def face_recognition(image, face_detector, recognizer, students: dict):
         name = None
         confidence = "    {0}%".format(round(100 - confidence))
 
-    cv2.putText(out_image, str(id), (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1)
+    cv2.putText(out_image, str(id) if id is not None else "Unknown", (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1)
     cv2.putText(out_image, str(confidence), (x + 5, y + h - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1)
 
     return id, name, out_image

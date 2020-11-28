@@ -10,12 +10,6 @@ app = Flask(__name__, template_folder='templates')
 
 # CV2 face detector
 face_detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-# Face recognizer (if trained file exist)
-if os.path.isfile('trained.yml'):
-    recognizer = cv2.face.LBPHFaceRecognizer_create()
-    recognizer.read('trained.yml')
-else:
-    recognizer = None
 
 # Student ID and name
 students = None
@@ -88,21 +82,37 @@ def register():
         success = api.extract_videos_to_images(file=os.path.join('uploads', filename),
                                                output='images', studentid=student_id,
                                                face_detector=face_detector)
-        # TODO: cheating detection (or check potential recognition mistake)
+        os.remove(os.path.join('uploads', filename))
         if not success:
+            for file in glob.glob('images/' + student_id + '*.jpg'):
+                os.remove(file)
             resp = {
                 'status': 6,
                 'message': 'Failed to recognize minimum number of faces in video. Please try again.'
             }
             return json.dumps(resp)
         else:
+            if os.path.isfile('trained.yml'):
+                recognizer = cv2.face.LBPHFaceRecognizer_create()
+                recognizer.read('trained.yml')
+                # Check potential problems
+                mis_count = 0
+                for file in glob.glob('images/' + student_id + '*.jpg'):
+                    m_id = api.check_potential_errors(cv2.imread(file, cv2.IMREAD_GRAYSCALE), recognizer, face_detector)
+                    if m_id is not False:
+                        mis_count += 1
+                if mis_count > 10:
+                    for file in glob.glob('images/' + student_id + '*.jpg'):
+                        os.remove(file)
+                    resp = {
+                        'status': 7,
+                        'message': 'Your face is too similar to someone else. Please try again.'
+                    }
+                    return json.dumps(resp)
             resp = {
                 'status': 0,
                 'message': 'Success. Please wait for school admin to register your face into database.'
             }
-
-        # Delete video after finished
-        os.remove(os.path.join('uploads', filename))
 
         return json.dumps(resp)
 
@@ -153,6 +163,14 @@ def attendance():
             return json.dumps(resp)
         image = request.form['image']
         img = api.base64_to_image(image)
+        if not os.path.isfile('trained.yml'):
+            resp = {
+                'status': 4,
+                'message': 'You arrived too soon. The system is not ready to use.'
+            }
+            return json.dumps(resp)
+        recognizer = cv2.face.LBPHFaceRecognizer_create()
+        recognizer.read('trained.yml')
         id, name, out_image = api.face_recognition(img, face_detector, recognizer, students)
         if id is None and name is None and out_image is None:
             # No faces were found
