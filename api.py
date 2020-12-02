@@ -60,7 +60,7 @@ def check_potential_errors(image, recognizer, face_detector):
             _h = h
 
     _id, _confidence = recognizer.predict(image[_y: _y + h, _x: _x + w])
-    if _confidence > 50:
+    if _confidence > 40:
         return False
     else:
         return _id
@@ -177,7 +177,7 @@ def face_recognition(image, face_detector, recognizer, students: dict):
     id, confidence = recognizer.predict(image_to_use[_y: _y + h, _x: _x + w])
 
     # The smaller the confidence, the better the match?
-    if confidence < 50:
+    if confidence < 49:
         id = str(id)
         name = students.get(id)
         confidence = "    {0}%".format(round(100 - confidence))
