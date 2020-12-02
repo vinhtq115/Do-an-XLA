@@ -36,6 +36,19 @@ def extract_videos_to_images(file: str, output: str, studentid: str, face_detect
     return False
 
 
+def extract_to_image(file: str, output: str, fname: str):
+    video = cv2.VideoCapture(file)
+    success, image = video.read()
+    count = 0
+    while success:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        cv2.imwrite(os.path.join(output, fname + "_%d.jpg" % count), gray)
+        count += 1
+
+        success, image = video.read()
+
+
 def check_potential_errors(image, recognizer, face_detector):
     if recognizer is None:
         return False
@@ -177,7 +190,7 @@ def face_recognition(image, face_detector, recognizer, students: dict):
     id, confidence = recognizer.predict(image_to_use[_y: _y + h, _x: _x + w])
 
     # The smaller the confidence, the better the match?
-    if confidence < 49:
+    if confidence < 60:
         id = str(id)
         name = students.get(id)
         confidence = "    {0}%".format(round(100 - confidence))

@@ -4,48 +4,39 @@
 <head>
     <meta charset="utf-8">
     <title>FacePlus++</title>
-
-    <link href="../static/css/css1.css" rel="stylesheet" />
-    <link href="../static/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="/static/css/css1.css" rel="stylesheet" />
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
-    <script src="/static/js/jquery-3.5.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/RecordRTC/5.6.1/RecordRTC.js"></script>
 </head>
 
 <body>
     <nav class="navbar navbar-expand-sm bg-light navbar-light" style="margin-bottom:0;background-color:#7386D5">
         <!-- Brand -->
-
         <a class="navbar-brand" href="index.html">
-            <img src="../static/ref/logo1.jpg" style="width:40px;height:40px;border:solid;border-radius:10%" />
+            <img src="/static/ref/logo1.jpg" style="width:40px;height:40px;border:solid;border-radius:10%" />
             <strong> FacePlus++ </strong>for Student
         </a>
     </nav>
-
     <div class="wrapper">
         <!-- Sidebar  -->
         <nav id="sidebar">
             <div class="sidebar-header">
                 <h3>Menu</h3>
             </div>
-
             <ul class="list-unstyled components">
-
                 <li class="active">
                     <a href="/">
                         <i class="fa fa-home" aria-hidden="true"></i>
                         Home
                     </a>
                 </li>
-
                 <li class="active">
                     <a href="/attendance">
                         <i class="fa fa-graduation-cap" aria-hidden="true"></i>
                         Attendance
                     </a>
                 </li>
-
                 <li class="active">
                     <a href="/register">
                         <i class="fa fa-file-text" aria-hidden="true"></i>
@@ -54,7 +45,6 @@
                 </li>
             </ul>
         </nav>
-
         <!-- Page Content  -->
         <div id="content">
             <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -63,25 +53,29 @@
                         <i class="fa fa-bars" aria-hidden="true"></i>
                         <span>Toggle Menu</span>
                     </button>
-
                 </div>
             </nav>
-            <div id="att">
-                <h2 style="margin-top: 40px">Registration</h2>
+            <div id="reg">
+                <h2 style="margin-top: 40px">Attendence</h2>
                 <br />
-                <div id="att-content">
-                    <label for="mssv">Student ID:</label>
-                    <input type="text" id="mssv" name="studentid" maxlength="8" class="form-control" placeholder="Enter Student ID"><br />
-                    <video autoplay playsinline id="video"></video><br />
-                    <button id="btn-start" class="btn btn-primary">Record and submit</button>
-                </div>
+                <video autoplay playsinline width="640" height="480" id="video"></video>
+                <canvas id="canvas" width="640" height="480" style="display: none"></canvas><img id="img"><br/>
+                <button id="btn-start" class="btn btn-primary">Record and submit.</button><br/>
             </div>
         </div>
     </div>
-    <script src="../static/js/popper.min.js"></script>
-    <script src="../static/js/bootstrap.min.js"></script>
+    <script src="/static/js/popper.min.js"></script>
+    <script src="/static/js/jquery-3.5.1.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#sidebarCollapse').on('click', function () {
+                $('#sidebar').toggleClass('active');
+            });
+        });
+    </script>
     <script>
-        var _button = document.getElementById('btn-start');
+        const btn = document.getElementById("btn-start");
         const video = document.getElementById('video');
         navigator.mediaDevices.getUserMedia({
             video: true,
@@ -114,26 +108,23 @@
                         // Get recorded blob
                         var blob = recorder.getBlob();
 
-                        // Open recorded blob in a new window
-                        //window.open(URL.createObjectURL(blob));
-
                         // Release camera
                         video.srcObject = null;
                         camera.getTracks().forEach(function (track) {
                             track.stop();
                         });
 
-                        // Upload?
+                        // Upload
                         var formdata = new FormData();
-                        formdata.append('studentid', document.getElementById('mssv').value);
                         formdata.append('video', blob);
                         $.ajax({
                             type: 'POST',
-                            url: '/register',
+                            url: '/attendance',
                             data: formdata,
                             processData: false,
                             contentType: false
                         }).done(function (data) {
+                            $('video').hide();
                             var resp = JSON.parse(data);
                             if (resp.status == 0) { // Success
                                 var d = document.createElement('div');
@@ -142,7 +133,10 @@
                                 d.setAttribute('role', 'alert');
                                 d.innerText = resp.message;
 
-                                _button.parentNode.insertBefore(d, _button.nextSibling);
+                                btn.parentNode.insertBefore(d, btn.nextSibling);
+
+                                const img = document.getElementById('img');
+                                img.src = resp.image;
                             } else { // Error
                                 var d = document.createElement('div');
                                 d.classList.add('alert');
@@ -151,8 +145,12 @@
                                 d.innerText = resp.message;
                                 d.innerText += " Reloading in 3 seconds.";
 
-                                _button.parentNode.insertBefore(d, _button.nextSibling);
+                                btn.parentNode.insertBefore(d, btn.nextSibling);
 
+                                if (resp.status == 5) {
+                                    const img = document.getElementById('img');
+                                    img.src = resp.image;
+                                }
                                 setTimeout(function() {
                                     location.reload();
                                 }, 3000);
@@ -163,13 +161,6 @@
                 }, 3000);
             }
         })
-    </script>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $('#sidebarCollapse').on('click', function () {
-                $('#sidebar').toggleClass('active');
-            });
-        });
     </script>
 </body>
 

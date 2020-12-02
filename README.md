@@ -1,4 +1,13 @@
 # Do-an-XLA
-Run Homepage by run index.html<br/>
-Register face in regis.html<br/>
-Face Recognition in diemdanh.index
+
+## Required libraries
+* OpenCV
+* Flask
+* Pillow
+
+## How to run
+Run `main.py` then open http://127.0.0.1:8000/ on your browser.
+
+There are two interfaces:
+* For students: http://127.0.0.1:8000/
+* For admins: http://127.0.0.1:8000/admin
