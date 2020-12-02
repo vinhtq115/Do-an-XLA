@@ -211,7 +211,8 @@ def face_recognition(image, face_detector, recognizer, students: dict):
         confidence = "    {0}%".format(round(100 - confidence))
 
     cv2.putText(out_image, str(id) if id is not None else "Unknown", (x + 5, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1)
-    cv2.putText(out_image, str(confidence), (x + 5, y + h - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1)
+    # Uncomment to print confidence
+    # cv2.putText(out_image, str(confidence), (x + 5, y + h - 5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1)
 
     return id, name, out_image
 
