@@ -146,12 +146,6 @@ def train():
     return json.dumps(resp)
 
 
-# Admin page showing errors
-@app.route('/error', methods=['GET'])
-def error():
-    return render_template('error.html')
-
-
 # Attendance page for student
 @app.route('/attendance', methods=['GET', 'POST'])
 def attendance():
@@ -258,6 +252,7 @@ def attendance():
                     results_img[str(stid)] = stoutimg
                 else:
                     results[str(stid)] = results[str(stid)] + 1
+        print(results)
         max_count = 0
         max_id = 'Unidentified'
         for k, v in results.items():

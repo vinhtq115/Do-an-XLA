@@ -23,8 +23,19 @@ def extract_videos_to_images(file: str, output: str, studentid: str, face_detect
 
         faces = face_detector.detectMultiScale(gray, 1.3, 5, minSize=(128, 128))
         if len(faces) > 0:
-            x, y, w, h = faces[0]
-            im_face = gray[y: y + h, x: x + w]
+            max_square = -1
+            for (x, y, w, h) in faces:
+                if w * h > max_square:
+                    max_square = w * h
+                    _x = x
+                    _y = y
+                    _w = w
+                    _h = h
+
+            im_face = gray[_y: _y + _h, _x: _x + _w]
+
+            if histogram_threshold(im_face):  # Check if the face is underexposure (cumulative histogram bigger than 0.5 at 64)
+                continue
 
             cv2.imwrite(os.path.join(output, studentid + "_%d.jpg" % count), im_face)
 
@@ -216,3 +227,30 @@ def get_image_as_base64(image):
     im_b64 = base64.b64encode(im_bytes)
     string_b64 = str(im_b64).split('\'')[1]
     return string_b64
+
+
+def histogram_threshold(gray, threshold=0.5, at=64):
+    """
+    Return whether cumulative histogram higher than threshold.
+    :param gray: OpenCV grayscale image
+    :param threshold: Threshold
+    :param at: Up to value
+    :return: True if higher and False if not
+    """
+    h, w = gray.shape[:2]
+
+    # calculate histogram
+    hist = cv2.calcHist(
+        [gray],
+        channels=[0],
+        mask=None,  # full image
+        histSize=[256],  # full scale
+        ranges=[0, 256]
+    )
+
+    # normalized histogram
+    norm_hist = hist / (h * w)
+    # cumulative histogram
+    cdf = norm_hist.cumsum()
+
+    return cdf[at] > threshold
