@@ -266,7 +266,7 @@ def attendance():
                 'message': 'No faces were found. Please try again.'
             }
             return json.dumps(resp)
-        if max_id == 'None' and (max_count > 80 or len(results.keys()) == 1):  # An unrecognized face were detected
+        if max_id == 'None' and (max_count > 87 or len(results.keys()) == 1):  # An unrecognized face were detected
             resp = {
                 'status': 5,
                 'message': 'A face was found but not recognized. Please try again.',

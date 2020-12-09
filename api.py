@@ -21,7 +21,7 @@ def extract_videos_to_images(file: str, output: str, studentid: str, face_detect
     while success:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        faces = face_detector.detectMultiScale(gray, 1.3, 5, minSize=(128, 128))
+        faces = face_detector.detectMultiScale(gray, 1.3, 5, minSize=(64, 48))
         if len(faces) > 0:
             max_square = -1
             for (x, y, w, h) in faces:
@@ -68,7 +68,7 @@ def check_potential_errors(image, recognizer, face_detector):
         image,
         scaleFactor=1.2,
         minNeighbors=5,
-        minSize=(128, 128)
+        minSize=(64, 48)
     )
     if len(faces) == 0:
         return None
@@ -177,7 +177,7 @@ def face_recognition(image, face_detector, recognizer, students: dict):
         image,
         scaleFactor=1.2,
         minNeighbors=5,
-        minSize=(128, 128)
+        minSize=(64, 48)
     )
 
     if len(faces) == 0:
